@@ -91,7 +91,7 @@ wv_model
 Admittedly, we had some fun wasting time on exploring the various methods associated with the Word2Vec model, especially the .most_similar() method.  Below are a few examples of being able to find various relationships between words from the text and  what we determined to be "Disaster Keywords".
 
 <b><u>Fire</b></u>
-<img src=".Images/w2v-fire.png" alt="Bigram Plot">
+<img src="Images/w2v-fire.png" alt="Bigram Plot">
 
 ADD OTHERS HERE
 
@@ -118,7 +118,7 @@ best_logreg_model.fit(X_train_processed, y_train)
 evaluate_classifier(best_logreg_model, X_test_processed, y_test)
 ```
 
-<img src=".Images/logreg.png" alt="Bigram Plot">
+<img src="Images/logreg.png" alt="Bigram Plot">
 
 #### SGD
 ```python
@@ -142,7 +142,7 @@ best_sgd_model.fit(X_train_processed, y_train)
 evaluate_classifier(best_sgd_model, X_test_processed, y_test)
 ```
 
-<img src=".Images/SGD Classifier.png" alt="Bigram Plot">
+<img src="Images/SGD Classifier.png" alt="Bigram Plot">
 
 #### Random Forest
 ```python
@@ -167,7 +167,7 @@ best_rf_model.fit(X_train_processed, y_train)
 evaluate_classifier(best_rf_model, X_test_processed, y_test)
 ```
 
-<img src=".Images/random forest.png" alt="Bigram Plot">
+<img src="Images/random forest.png" alt="Bigram Plot">
 
 #### Stacking Classifier
 ```python
@@ -184,7 +184,7 @@ stack.fit(X_train_processed, y_train)
 evaluate_classifier(stack, X_test_processed, y_test)
 ```
 
-<img src=".Images/stack.png" alt="Bigram Plot">
+<img src="Images/stack.png" alt="Bigram Plot">
 
 As you can see above, the best peforming model was the simple Logistic Regression...and by quite a bit too!  Since Logistic Regression wins the battle of the classifiers, we'll use this model later on for interpretations.  
 
@@ -268,9 +268,9 @@ history = model.fit(X_train_nn, y_train_nn, batch_size = 50, epochs = 25,
 network_eval_plots(history)
 ```
 
-<img src=".Images/lstm1.png" alt="Bigram Plot">
+<img src="Images/lstm1.png" alt="Bigram Plot">
 
-<img src=".Images/lstm2.png" alt="Bigram Plot">
+<img src="Images/lstm2.png" alt="Bigram Plot">
 
 As we can see, this didn't perform well in terms of recall, which is our primary scoring metric.  
 
@@ -321,9 +321,9 @@ history2 = model2.fit(X_train_nn, y_train_nn, batch_size = 15, epochs = 25,
 network_eval_plots(history2)
 ```
 
-<img src=".Images/gru1.png" alt="Bigram Plot">
+<img src="Images/gru1.png" alt="Bigram Plot">
 
-<img src=".Images/gru2.png" alt="Bigram Plot">
+<img src="Images/gru2.png" alt="Bigram Plot">
 
 This model didn't do well at all.  For some reason, it was not making predictions with the same accuracy that the model was claiming to be performing at.  This was an issue that we continuously ran into with both LSTM and GRU models during this phase. 
 
@@ -432,9 +432,9 @@ history4 = model4.fit(train_padded, y_train, batch_size = 50,
 network_eval_plots(history4)
 ```
 
-<img src=".Images/sequel1.png" alt="Bigram Plot">
+<img src="Images/sequel1.png" alt="Bigram Plot">
 
-<img src=".Images/sequel2.png" alt="Bigram Plot">
+<img src="Images/sequel2.png" alt="Bigram Plot">
 
 This performed slightly better than the first time, but definitely still needs work.  Admittedly, we had less time to spend fine tuning this model and it will continue to be a work in progress. 
 
@@ -445,11 +445,11 @@ This performed slightly better than the first time, but definitely still needs w
 
 
 #### SHAP Summary Bar Plot
-<img src=".Images/shap-bar.png" alt="Bigram Plot">
+<img src="Images/shap-bar.png" alt="Bigram Plot">
 > This showss the top words in terms of importance when determining whether or not a tweet is disaster related.
 
 #### SHAP Summary Importance Plot
-<img src=".Images/shap-summary.png" alt="Bigram Plot">
+<img src="Images/shap-summary.png" alt="Bigram Plot">
 > This plot shows the same list of top words, but also whether they have a negative or positive effect on determining a "disaster tweet"
 
 
@@ -482,7 +482,7 @@ With more time, we can improve on this model in the following ways:
 
 
 ### For further information
-Please review the narrative of our analysis in [our jupyter notebook](./NLP-Project.ipynb) or review our [presentation](./Mod-4 Presentation.pdf)
+Please review the narrative of our analysis in [our jupyter notebook](/NLP-Project.ipynb) or review our [presentation](/Mod-4 Presentation.pdf)
 
 For any additional questions, please contact **jeff.spags@gmail.com
 
