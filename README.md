@@ -1,224 +1,502 @@
-# Module 4 Final Project
+# Detecting Disaster Tweets
+## Determining whether a Tweet is About a Disaster 
 
+**Authors**: Jeff Spagnola
 
-## Introduction
+The contents of this repository detail an analysis of the module one project. This analysis is detailed in hopes of making the work accessible and replicable.
 
-In this lesson, we'll review all of the guidelines and specifications for the final project for Module 4.
+<center> <img src="dark-twitter-birdjpg.jpg" alt="Twitter Disaster" width = "700" height = "300"> </center>
 
-## Objectives
+### Business problem:
+The ability to develop a system that can accurately determine the context of a tweet can be useful in many areas, especially for organizations in the news and security sectors. Social media outlets are increasingly becoming the primary place where news "breaks" and the ability to sift through the noise and find posts about catastropic events can lead to a much quicker response and a better concept of the details surrounding the situation.
 
-* Understand all required aspects of the Final Project for Module 4
-* Understand all required deliverables
-* Understand what constitutes a successful project
+Within this notebook, we will create a model that can act as a social media monitor that will take in a series of tweets and determine whether or not a tweet is in reference to an actual disaster. For example, we can use natural langauge processing to determine the difference between "There is a brush fire in Australia." and "The new Kenrick Lamar song is fire!"
 
-## Final Project Summary
+### Data
+The data was obtained from the <a href="https://www.kaggle.com/vstepanenko/disaster-tweets">Disaster Tweets dataset on Kaggle</a>.  The dataset contains over 11,000 tweets associated with disaster keywords such as "crash", "quarantine", "ablaze", and others.  All tweets were collected on Jan. 14th, 2020 and some of the topics collected were the eruption of Taal Volcano in Batangas, Phillippines, Coronavirus, Bushfires in Australia, and the downing of flight PS752. 
 
-Final module down -- you're absolutely crushing it! You've made it all the way through one of the toughest modules of this course. You must have an amazing brain in your head!
+### Process
+The data was analyzed using the OSEMN data science method and during this presentation we will walk through each step of this process as well as share the results.
 
-<img src='https://raw.githubusercontent.com/learn-co-students/dsc-mod-4-project-seattle-ds-102819/master/images/brain.gif'>
+## Methods
+This was a very iterative process from start to finish.  We can break down the methods into three parts: basic NLP, Classifier Models, and Neural Networks.
 
-## The Datasets
+### Basic NLP
+After importing the data and trimming the dataset down to a text and target column, we were ready to begin cleaning up the text in order to perform some basic NLP.  First, we created a single corpus out of the text column.
 
-For this module's final project, you have the choice of four problems:
+```python
+explore_df = df['text'].copy()
+explore_text = ' '.join(explore_df)
+explore_text
 
-- Time Series Modeling
-- Recommendation System
-- Image Classification with Deep Learning
-- Natural Language Processing
+```
+Next up, we performed some super basic Regex as well as made all words lowercase.
 
-For each problem, we have provided a dataset. You may use a dataset of your own choosing with your instructor's approval.
+```python
+pattern = "([a-zA-Z]+(?:'[a-z]+)?)"
+explore_tokens_raw = nltk.regexp_tokenize(explore_text, pattern)
+explore_tokens = [word.lower() for word in explore_tokens_raw]
+explore_tokens
 
-Like Project \#3, the focus here is on *prediction*. It will be up to you to determine how best to evaluate your model, but for any of these projects your goal is to build something that **works**.
+```
 
-When choosing a problem, consider:
+Next, we removed all stopwords, punctuation, and numbers...including some custom things that needed to be removed. 
 
-1. **Portfolio Depth:** One option is to choose the same type of problem you plan to tackle in Module 5 (capstone).  This will allow you to practice the necessary skills in a group setting, before diving into your individual project.  You will likely produce a capstone project that is more polished and sophisticated, but your portfolio will demonstrate less breadth.
-2. **Portfolio Breadth:** Another option is to choose a type of problem that interests you, but that you don't plan to use in your capstone project.  Each of your individual projects will end up less polished and sophisticated, but you will end up with a portfolio that demonstrates a wider range of skills.
+```python
+stop_words_list = stopwords.words('english')
+stop_words_list += list(string.punctuation)
+stop_words_list += ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+stop_words_list.extend(['h', 'https', 'b', 'c', 'w', 'co', 'n', 'u'])
+cleaned_explore_text = [word for word in explore_tokens if word not in stop_words_list]
+cleaned_explore_text
 
-### Problem 1: Time Series Modeling
+```
 
-If you choose the Time Series option, you will be forecasting real estate prices of various zip codes using data from [Zillow](https://www.zillow.com/research/data/). However, this won't be as straightforward as just running a time-series analysis -- you're going to have to make some data-driven decisions and think critically along the way!
+Now that the text has been cleaned up quite a bit, it's time to do some quick exploration of what we have.  First, we created a Frequency Distribution in order to determine the most common words in thet text. 
 
-For this project, you will be acting as a consultant for a fictional real-estate investment firm. The firm has asked you what seems like a simple question:
+```python
+explore_freq_dist = FreqDist(cleaned_explore_text)
+most_common_words = explore_freq_dist.most_common(25)
+most_common_words
+```
 
-> What are the top 5 best zip codes for us to invest in?
+##### Most Common Words Plot 
+<img src=".Images/common words.png" alt="Bigram Plot">
 
-This may seem like a simple question at first glance, but there's more than a little ambiguity here that you'll have to think through in order to provide a solid recommendation. Should your recommendation be focused on profit margins only? What about risk? What sort of time horizon are you predicting against?  Your recommendation will need to detail your rationale and answer any sort of lingering questions like these in order to demonstrate how you define "best".
+As we can see, this didn't really give us a ton of information beyond the word counts.  In order to gain more significant insight, we decided to create a list of the top 25 bigrams.  
 
-As mentioned previously, the data you'll be working with comes from the [Zillow Research Page](https://www.zillow.com/research/data/). However, there are many options on that page, and making sure you have exactly what you need can be a bit confusing. For simplicity's sake, we have already provided the dataset for you in this repo -- you will find it in the file `time-series/zillow_data.csv`.
+```python
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+explore_finder = BigramCollocationFinder.from_words(cleaned_explore_text)
+explore_scored = explore_finder.score_ngrams(bigram_measures.raw_freq)
 
-The goal of this project is to have you complete a very common real-world task in regard to time series modeling. However, real world problems often come with a significant degree of ambiguity, which requires you to use your knowledge of statistics and data science to think critically about and answer. While the main task in this project is time series modeling, that isn't the overall goal -- it is important to understand that time series modeling is a tool in your toolbox, and the forecasts it provides you are what you'll use to answer important questions.
+explore_scored[:25]
+```
 
-In short, to pass this project, demonstrating the quality and thoughtfulness of your overall recommendation is at least as important as successfully building a time series model!
+##### Bigram Plot
+<img src=".Images/bigram.png" alt="Bigram Plot">
 
-#### Starter Jupyter Notebook
+This definitely provides ALOT more insight into the relationships between the words in the text.  We can start to see certain patterns emerge that begin to show phrases that seem to be associated with disasters.  
 
-For this project, you will be provided with a Jupyter notebook, `time-series/starter_notebook.ipynb`, containing some starter code. If you inspect the Zillow dataset file, you'll notice that the datetimes for each sale are the actual column names -- this is a format you probably haven't seen before. To ensure that you're not blocked by preprocessing, we've provided some helper functions to help simplify getting the data into the correct format. You're not required to use this notebook or keep it in its current format, but we strongly recommend you consider making use of the helper functions so you can spend your time working on the parts of the project that matter.
+The next step in our Basic NLP journey was to fit a Word2Vec model on our text in order to further explore the relationships between words. 
 
-#### Evaluation
+```python
+w2v_text = [cleaned_explore_text]
 
-In addition to deciding which quantitative metric(s) you want to target (e.g. minimizing mean squared error), you need to start with a definition of "best investment".  Consider additional metrics like risk vs. profitability, or ROI yield.
+wv_model = Word2Vec(w2v_text, size = 100, window = 5, min_count = 1, workers = 4)
+wv_model.train(w2v_text, total_examples = wv_model.corpus_count, epochs = 10)
+wv_model
+```
 
-### Problem 2: Recommendation System
+Admittedly, we had some fun wasting time on exploring the various methods associated with the Word2Vec model, especially the .most_similar() method.  Below are a few examples of being able to find various relationships between words from the text and  what we determined to be "Disaster Keywords".
 
-If you choose the Recommendation System option, you will be making movie recommendations based on the [MovieLens](https://grouplens.org/datasets/movielens/latest/) dataset from the GroupLens research lab at the University of Minnesota.  Unless you are planning to run your analysis on a paid cloud platform, we recommend that you use the "small" dataset containing 100,000 user ratings (and potentially, only a particular subset of that dataset).
+<b><u>Fire</b></u>
+<img src=".Images/w2v-fire.png" alt="Bigram Plot">
 
-Your task is to:
+ADD OTHERS HERE
 
-> Build a model that provides top 5 movie recommendations to a user, based on their ratings of other movies.
+### Classifier Models
+We decided early on to run several different types of supervised classifcation models and feed the best of them into a Stacking Classifier to achieve the best results possible.  As you'll soon see, we were pretty surprised at the actual results.  Below is the code for the best model as well as the results.  
 
-The MovieLens dataset is a "classic" recommendation system dataset, that is used in numerous academic papers and machine learning proofs-of-concept.  You will need to create the specific details about how the user will provide their ratings of other movies, in addition to formulating a more specific business problem within the general context of "recommending movies".
+#### Logistic Regression
+```python
+params = {'class_weight': ['balanced'],
+          'solver': ['lbfgs', 'liblinear'],
+          'C': [1.0, 3.0, 5.0]}
+grid = GridSearchCV(estimator = LogisticRegression(), 
+                    param_grid = params, 
+                    cv = 3, 
+                    n_jobs = -1)
+grid.fit(X_train_processed, y_train)
+
+# Fit the best model
+best_logreg_params = grid.best_params_
+best_logreg_model = LogisticRegression(**best_logreg_params)
+best_logreg_model.fit(X_train_processed, y_train)
+
+# Evaluate model
+evaluate_classifier(best_logreg_model, X_test_processed, y_test)
+```
+
+<img src=".Images/logreg.png" alt="Bigram Plot">
+
+#### SGD
+```python
+params = {'class_weight': ['balanced'],
+          'random_state': [30],
+          'loss': ['hinge', 'perceptron'],
+          'penalty': ['l1', 'l2']}
+grid = GridSearchCV(estimator = SGDClassifier(), 
+                    param_grid = params, 
+                    cv = 3, 
+                    n_jobs = -1)
+grid.fit(X_train_processed, y_train)
+
+# Fit the best model
+
+best_sgd_params = grid.best_params_
+best_sgd_model = SGDClassifier(**best_sgd_params)
+best_sgd_model.fit(X_train_processed, y_train)
+
+# Evaluate model
+evaluate_classifier(best_sgd_model, X_test_processed, y_test)
+```
+
+<img src=".Images/SGD Classifier.png" alt="Bigram Plot">
+
+#### Random Forest
+```python
+# Gridsearch for Random Forest
+params = {'class_weight': [None, 'balanced'],
+          'random_state': [30],
+          'criterion': ['gini', 'entropy'], 
+          'max_depth': [3, 5, 10], 
+          'min_samples_leaf': [1, 5, 10]}
+grid = GridSearchCV(estimator = RandomForestClassifier(),
+                    param_grid = params, 
+                    cv = 3, 
+                    n_jobs = -1)
+grid.fit(X_train_processed, y_train)
+
+# Fit a new model with the best paramaters from GridSearchCV
+best_rf_params = grid.best_params_
+best_rf_model = RandomForestClassifier(**best_rf_params)
+best_rf_model.fit(X_train_processed, y_train)
+
+# Evaluate the model
+evaluate_classifier(best_rf_model, X_test_processed, y_test)
+```
+
+<img src=".Images/random forest.png" alt="Bigram Plot">
+
+#### Stacking Classifier
+```python
+# Fit the stacking classifier
+estimators = [('logreg', logreg),
+              ('sgd', best_sgd_model)]
+             # ('rf', best_rf_model)]
+#               ('xg', best_xgb_model)]
+
+stack = StackingClassifier(estimators = estimators, cv = 3, n_jobs = -1)
+stack.fit(X_train_processed, y_train)
+
+# Evaluate the model
+evaluate_classifier(stack, X_test_processed, y_test)
+```
+
+<img src=".Images/stack.png" alt="Bigram Plot">
+
+As you can see above, the best peforming model was the simple Logistic Regression...and by quite a bit too!  Since Logistic Regression wins the battle of the classifiers, we'll use this model later on for interpretations.  
+
+### Neural Networks
+The neural networks in this section represent the results of a HIGHLY iterative process where we attempted literally hundreds of combinations of layers, parameters, preprocessing methods, optimizers, activation functions, and basically any tunable paramter you can think of.  Results varied greatly and we also encountered an odd phenomenon where the model would seem to be highly accurate but would not produce accurate predictions.  The following represents a compromise between getting decent predictions and allowing a bit of overfitting.  This is something that will be rectified in later versions of this notebook. 
+
+#### First Attempt
+This requires a bit of a different preprocessing method, so we will detail this below first. 
+
+##### Preprocessing - The First Attempt
+```python
+# Remove Stop words 
+text_data = [word for word in text_data if word not in stop_words_list]
+
+# Create & fit a tokenizer
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(text_data)
+
+# Create a text sequence
+X = tokenizer.texts_to_sequences(text_data)
+X = sequence.pad_sequences(X)
+
+# Save the length of X
+sequence_length = X.shape[1]
+
+# Save words
+word_index = tokenizer.index_word
+reverse_index = {v:k for k, v in word_index.items()}
+```
 
-#### Collaborative Filtering
+This worked fairly well and next was dealing with class imbalances in the target.  After trying several methods, we went with assigning a weight to pass into the compile of our nodel.  
+
+```python
+from sklearn.utils.class_weight import compute_class_weight
+
+weights = compute_class_weight('balanced', np.unique(y_train_nn), y_train_nn)
+weights = dict(zip(np.unique(y_train_nn), y_train_nn))
+weights
+```
 
-At minimum, your recommendation system must use collaborative filtering.  If you have time, consider implementing a hybrid approach, e.g. using collaborative filtering as the primary mechanism, but using content-based filtering to address the [cold start problem](https://en.wikipedia.org/wiki/Cold_start_(computing)).
+##### LSTM Model
+Below is an LSTM sequence model and this represents the final result (best model) of many, many iterations of various combinations of architectures and hyperparameters.  
 
-#### Evaluation
+```python
+# Early Stopping 
+callback = EarlyStopping(monitor = 'val_acc', patience = 5, mode = 'max', 
+                         min_delta = .01, restore_best_weights = True)
 
-The MovieLens dataset has explicit ratings, so achieving some sort of evaluation of your model is simple enough.  But you should give some thought to the question of metrics.  Since the rankings are ordinal, we know we can treat this like a regression problem.  But when it comes to regression metrics there are several choices: RMSE, MAE, etc.  [Here](http://fastml.com/evaluating-recommender-systems/) are some further ideas.
+# Create a base neural network
+model = Sequential()
 
-### Problem 3: Image Classification with Deep Learning
+# Embedding layer
+model.add(Embedding(input_dim = len(tokenizer.word_index) + 1, 
+                           input_length = sequence_length, 
+                           output_dim = 1000))
 
-If you choose this option, you'll put everything you've learned together to build a deep neural network that trains on a large dataset for classification on a non-trivial task.  In this case, using x-ray images of pediatric patients to identify whether or not they have pneumonia.  The dataset comes from Kermany et al. on [Mendeley](https://data.mendeley.com/datasets/rscbjbr9sj/3), although there is also a version on [Kaggle](https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia) that may be easier to use.
+model.add(SpatialDropout1D(0.3))
 
-Your task is to:
+# Hidden Layers
+model.add(Bidirectional(LSTM(activation = 'relu', units = 128, dropout = 0.3, 
+                             recurrent_dropout = 0.3, kernel_regularizer = regularizers.l2(.1))))
+model.add(Dropout(0.3))
 
-> Build a model that can classify whether a given patient has pneumonia, given a chest x-ray image.
+model.add(Dense(64, activation = 'relu'))
+model.add(Dropout(0.3))
 
-#### Aim for a Proof of Concept
+model.add(Dense(32, activation = 'relu'))
+model.add(Dropout(0.3))
 
-With Deep Learning, data is king -- the more of it, the better. However, the goal of this project isn't to build the best model possible -- it's to demonstrate your understanding by building a model that works. You should try to avoid datasets and model architectures that won't run in reasonable time on your own machine. For many problems, this means downsampling your dataset and only training on a portion of it. Once you're absolutely sure that you've found the best possible architecture and other hyperparameters for your model, then consider training your model on your entire dataset overnight (or, as larger portion of the dataset that will still run in a feasible amount of time).
+# Output layer
+model.add(Dense(1, activation = 'sigmoid'))
 
-At the end of the day, we want to see your thought process as you iterate and improve on a model. A project that achieves a lower level of accuracy but has clearly iterated on the model and the problem until it found the best possible approach is more impressive than a model with high accuracy that did no iteration. We're not just interested in seeing you finish a model -- we want to see that you understand it, and can use this knowledge to try and make it even better!
+# Compile
+model.compile(optimizer = 'RMSProp', loss = 'binary_crossentropy', metrics = ['acc'])
 
-#### Evaluation
+# Fit model
+history = model.fit(X_train_nn, y_train_nn, batch_size = 50, epochs = 25, 
+                    validation_data = (X_test_nn, y_test_nn), callbacks = callback)#, class_weight = weights)#validation_split = 0.3,
 
-Evaluation is fairly straightforward for this project.  But you'll still need to think about which metric to use and about how best to cross-validate your results.
+# Evaluating the model 
+network_eval_plots(history)
+```
 
-### Problem 4: Natural Language Processing (NLP)
+<img src=".Images/lstm1.png" alt="Bigram Plot">
 
-If you choose this option, you'll build an NLP model to analyze Twitter sentiment about Apple and Google products. The dataset comes from CrowdFlower via [data.world][]. Human raters rated the sentiment in over 9,000 Tweets as positive, negative, or neither.
+<img src=".Images/lstm2.png" alt="Bigram Plot">
 
-Your task is to:
+As we can see, this didn't perform well in terms of recall, which is our primary scoring metric.  
 
-> Build a model that can rate the sentiment of a Tweet based on its content.
+##### GRU Model
+Out of sheer curiosity, we wanted to see if a GRU model would do any better.  
 
-#### Aim for a Proof of Concept
+```python
+from tensorflow.keras.layers import GRU
 
-There are many approaches to NLP problems - start with something simple and iterate from there. For example, you could start by limiting your analysis to positive and negative Tweets only, allowing you to build a binary classifier. Then you could add in the neutral Tweets to build out a multiclass classifier. You may also consider using some of the more advanced NLP methods in the Mod 4 Appendix.
+# Early Stopping 
+callback = EarlyStopping(monitor = 'val_acc', patience = 3, mode = 'max', 
+                         min_delta = .1, restore_best_weights = True)
 
-#### Evaluation
+# Create a base neural network
+model2 = Sequential()
 
-Evaluating multiclass classifiers can be trickier than binary classifiers because there are multiple ways to mis-classify an observation, and some errors are more problematic than others. Use the business problem that your NLP project sets out to solve to inform your choice of evaluation metrics.
+# Embedding layer
+model2.add(Embedding(input_dim = len(tokenizer.word_index) + 1, 
+                           input_length = sequence_length, 
+                           output_dim = 100))
+model2.add(SpatialDropout1D(0.3))
 
-## The Deliverables
+# Hidden Layers
+model2.add(Bidirectional(GRU(activation = 'tanh', units = 200, recurrent_dropout = 0.3, 
+               kernel_regularizer = regularizers.l2(.1))))
+model2.add(Dropout(0.3))
 
-For online students, your completed project should contain the following four deliverables:
+model2.add(Dense(activation = 'tanh', units = 64))
+model2.add(Dropout(0.3))
 
-1. A **_Jupyter Notebook_** containing any code you've written for this project. This work will need to be pushed to a public GitHub repository dedicated for this project.
+model2.add(Dense(activation = 'tanh', units = 32))
+model2.add(Dropout(0.3))
 
-2. An organized **README.md** file in the GitHub repository that describes the contents of the repository. This file should be the source of information for navigating through the repository.
+model2.add(LeakyReLU(alpha = 0.1))
+model2.add(Dropout(0.3))
 
-3. A **_[Blog Post](https://github.com/learn-co-curriculum/dsc-welcome-blogging-v2-1)_**.
+# Output layer
+model2.add(Dense(1, activation = 'sigmoid'))
 
-4. An **_"Executive Summary" PowerPoint Presentation_** that gives a brief overview of your problem/dataset, and each step of the data science process.
+# Compile
+model2.compile(optimizer = 'RMSProp', loss = 'binary_crossentropy', metrics = ['acc'])
 
-Note: On-campus students may have different deliverables, please speak with your instructor.
+# Fit model
+history2 = model2.fit(X_train_nn, y_train_nn, batch_size = 15, epochs = 25, 
+                    validation_data = (X_test_nn, y_test_nn), callbacks = callback) #class_weight = weights)validation_split = 0.2
 
-### Jupyter Notebook Must-Haves
+# Checking the accuracy of the model 
+network_eval_plots(history2)
+```
 
-For this project, your Jupyter Notebook should meet the following specifications:
+<img src=".Images/gru1.png" alt="Bigram Plot">
 
-**_Organization/Code Cleanliness_**
+<img src=".Images/gru2.png" alt="Bigram Plot">
 
-* The notebook should be well organized, easy to follow, and code is commented where appropriate.  
-    * Level Up: The notebook contains well-formatted, professional looking markdown cells explaining any substantial code. All functions have docstrings that act as professional-quality documentation.  
-* The notebook is written to technical audiences with a way to both understand your approach and reproduce your results. The target audience for this deliverable is other data scientists looking to validate your findings.  
+This model didn't do well at all.  For some reason, it was not making predictions with the same accuracy that the model was claiming to be performing at.  This was an issue that we continuously ran into with both LSTM and GRU models during this phase. 
 
-**_Process, Methodology, and Findings_**
+#### Second Attempt
+After what seemed like an eternity of reworking the previous neural networks with no improvement in either accuracy or the predictions issue, we decided to start fresh with a different method of preprocessing to see if maybe the issue was pre-modeling.  The neural network below was less iterative than the previous models as it was more of an experiment in preprocessing.
 
-* Your notebook should contain a clear record of your process and methodology for exploring and preprocessing your data, building and tuning a model, and interpreting your results.
-* We recommend you use the OSEMN process to help organize your thoughts and stay on track.
+##### Preprocessing - The Sequel
+The first preprocessing step that we decided to try was to use functions to clean the text "manually".  In the interest of not bogging down the readme, we won't print all the code here.  Feel free to check out the Functions section in the notebook.  
 
+```python
+# Create a new X & y and do "manual preprocessing"
 
-### Visualizations
+X = df['text'].copy()
+y = df['target'].copy()
 
-As usual, the best way to present findings is often visually, and the tips and reminders below should apply to any of these projects.
+X = X.map(lambda x: remove_url(x))
+X = X.map(lambda x: remove_html(x))
+X = X.map(lambda x: remove_emoji(x))
+X = X.map(lambda x: remove_punctuation(x))
+X = X.map(remove_stopwords)
+X
+```
 
-But please pay special attention to this section if choosing Project \#1 because time series analysis is an area of data science that lends itself well to intuitive data visualizations. Whereas we may not be able to visualize the best choice in a classification or clustering problem with a high-dimensional dataset, that isn't an issue with time series data. As such, **_any findings worth mentioning in this problem are probably also worth visualizing_**.
+Next, we created a counter as an alternative to FreqDist.
 
-Your notebook should make use of data visualizations as appropriate to make your findings obvious to any readers. And, when it comes to moving images out of notebooks, make an effort to *export* them rather than taking screen shots. Note e.g. `matplotlib.pyplot.savefig()`, an in-built exportation tool. See [here](https://medium.com/analytics-vidhya/export-images-from-jupyter-notebook-with-a-single-command-422db2b66e92) for more sophisticated possibilities.
+```python
 
-Remember that if a visualization is worth creating, then it's also worth taking the extra few minutes to make sure that it is easily understandable and well-formatted. When creating visualizations, make sure that they have:
+from collections import Counter
 
-* A title
-* Clearly labeled X and Y axes, with appropriate scale for each
-* A legend, when necessary
-* No overlapping text that makes it hard to read
-* An intelligent use of color -- multiple lines should have different colors and/or symbols to make them easily differentiable to the eye
-* An appropriate amount of information -- avoid creating graphs that are "too busy". For instance, don't create a line graph with 25 different lines on it.
+def counter_word(text):
+    count = Counter()
+    for i in text.values:
+        for word in i.split():
+            count[word] += 1
+    return count
+    
+# Implement the counter function
 
-<center><img src='images/bad-graph-1.png' height=100% width=100%>
-There's just too much going on in this graph for it to be readable -- don't make the same mistake! (<a href='http://genywealth.com/wp-content/uploads/2010/03/line-graph.php_.png'>Source</a>)</center>
+counter = counter_word(X)
+print('Total Number of Words:', len(counter))
+counter    
+```
 
-### Blog Post Must-Haves
+After the counter, we did a train/test split, created a tokenizer and word sequences.
 
-Refer back to the [Blogging Guidelines](https://github.com/learn-co-curriculum/dsc-welcome-blogging-v2-1) for the technical requirements and blog ideas.
+```python
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 30)
 
-## The Process
+tokenizer = Tokenizer(num_words = num_words)
+tokenizer.fit_on_texts(X_train)
 
-These steps are informed by Smart Vision's<sup>1</sup> description of the CRISP-DM process.
+word_index = tokenizer.word_index
 
-### 1. Business Understanding
+train_sequences = tokenizer.texts_to_sequences(X_train)
+train_padded = pad_sequences(train_sequences, maxlen = max_length, padding = 'post', truncating = 'post')
 
-Start by reading this document, and making sure that you understand the kinds of questions being asked.  In order to narrow your focus, you will likely want to make some design choices about your specific audience, rather than attempting to address all potentially-relevant concerns. Think about what kinds of predictions you want to be able to make, and about which kinds of wrong predictions are most concerning.
+test_sequences = tokenizer.texts_to_sequences(X_test)
+test_padded = pad_sequences(test_sequences, maxlen = max_length, padding = 'post', truncating = 'post')
+```
 
-Three things to be sure you establish during this phase are:
+We felt that the results of this method of preprocessing seemed to produce a cleaner final dataset.  Let's see how the model feels about it. 
 
-1. **Objectives:** what questions are you trying to answer, and for whom?
-2. **Project plan:** you may want to establish more formal project management practices, such as daily stand-ups or using a Trello board, to plan the time you have remaining.  Regardless you should determine the division of labor, communication expectations, and timeline.
-3. **Success criteria:** what does a successful project look like?  How will you know when you have achieved it?  At this point you should be able to establish at least one quantitative success metric, before you even decide on which model(s) you are going to try.
+##### LSTM Model - The Sequel
+```python
+# Early Stopping 
+callback = EarlyStopping(monitor = 'val_acc', patience = 5, mode = 'max', 
+                         min_delta = .01, restore_best_weights = True)
 
-### 2. Data Understanding
+# Create a base neural network
+model4 = Sequential()
 
-Write a script to download the data (or instructions for future users on how to manually download it), and explore it.  Do you understand what the columns mean?  If the dataset has more than one table, how do they relate to each other?  How will you select the subset of relevant data?  What kind of data cleaning is required?
+# Embedding layer
+model4.add(Embedding(input_dim = len(word_index) + 1, 
+                           input_length = max_length, 
+                           output_dim = 1000))
+model4.add(SpatialDropout1D(0.3))
 
-It may be useful to generate visualizations of the data during this phase.
+# Hidden Layers
+model4.add(Bidirectional(LSTM(activation = 'relu', units = 128, dropout = 0.3, 
+                             recurrent_dropout = 0.3, kernel_regularizer = regularizers.l2(.1))))
+model4.add(Dropout(0.3))
 
-### 3. Data Preparation
+model4.add(Dense(64, activation = 'relu'))
+model4.add(Dropout(0.3))
 
-Through SQL and Pandas, perform any necessary data cleaning and develop a query that pulls in all relevant data for modeling, including any merging of tables.  Be sure to document any data that you choose to drop or otherwise exclude.  This is also the phase to consider any feature scaling or one-hot encoding required to feed the data into your particular model.
+model4.add(Dense(64, activation = 'relu'))
+model4.add(Dropout(0.3))
 
-### 4. Modeling
+model4.add(Dense(32, activation = 'relu'))
+model4.add(Dropout(0.3))
 
-Similar to the Mod 3 project, the focus is on prediction. Good prediction is a matter of the model generalizing well. Steps we can take to assure good generalization include: testing the model on unseen data, cross-validation, and regularization. What sort of model should you build?
+model4.add(LeakyReLU(alpha = 0.1))
+model4.add(Dropout(0.3))
 
-Here you will also likely encounter problems with computational capacity.  Figure out how to use smaller samples of your data in order to tweak hyperparameters.  Investigate cloud tools with hardware acceleration (e.g. Google Colab is a free one) in order to run your analysis with larger sets of data and more versions of the model.
+# Output layer
+model4.add(Dense(1, activation = 'sigmoid'))
 
-### 5. Evaluation
+# Compile
+model4.compile(optimizer = 'RMSProp', loss = 'binary_crossentropy', metrics = ['acc'])
 
-Recall that there are many different metrics we might use for evaluating a classification model. Accuracy is intuitive, but can be misleading, especially if you have class imbalances in your target. Perhaps, depending on you're defining things, it is more important to minimize false positives, or false negatives. It might therefore be more appropriate to focus on precision or recall. You might also calculate the AUC-ROC to measure your model's *discrimination*.
+# Fit 
+history4 = model4.fit(train_padded, y_train, batch_size = 50,
+                      epochs = 25, validation_data = (test_padded, y_test), callbacks = callback)
 
-### 6. Deployment
+# Evaluate
+network_eval_plots(history4)
+```
 
-In this case, your "deployment" comes in the form of the deliverables listed above. Make sure you can answer the following questions about your process:
+<img src=".Images/sequel1.png" alt="Bigram Plot">
 
- - "How did you pick the question(s) that you did?"
- - "Why are these questions important from a business perspective?"
- - "How did you decide on the data cleaning options you performed?"
- - "Why did you choose a given method or library?"
- - "Why did you select these visualizations and what did you learn from each of them?"
- - "Why did you pick those features as predictors?"
- - "How would you interpret the results?"
- - "How confident are you in the predictive quality of the results?"
- - "What are some of the things that could cause the results to be wrong?"
+<img src=".Images/sequel2.png" alt="Bigram Plot">
 
-## Grading Rubric
+This performed slightly better than the first time, but definitely still needs work.  Admittedly, we had less time to spend fine tuning this model and it will continue to be a work in progress. 
 
-Online students can find a PDF of the grading rubric for the project [here](TODO). _Note: On-campus students may have different requirements, please speak with your instructor._
 
-## Citation
+## Results
 
-1. "What is the CRISP-DM Methodology?" Smart Vision Europe. Available at: https://www.sv-europe.com/crisp-dm-methodology/
+### Here are examples of how to embed images from your sub-folder
 
-[data.world]: https://data.world/crowdflower/brands-and-product-emotions
+
+#### SHAP Summary Bar Plot
+<img src=".Images/shap-bar.png" alt="Bigram Plot">
+> This showss the top words in terms of importance when determining whether or not a tweet is disaster related.
+
+#### SHAP Summary Importance Plot
+<img src=".Images/shap-summary.png" alt="Bigram Plot">
+> This plot shows the same list of top words, but also whether they have a negative or positive effect on determining a "disaster tweet"
+
+
+## Conclusion:
+Social media outlets are increasingly becoming a primary outlet for breaking news and the ability to be able to determine whether a post is newsworthy or nonsense is vital to creating awareness of events and if needed, increase the response time for an emergency.  Throughout this notebook, we attempted to create machine learning models that could accurately predict whether or not a tweet was in reference to a disaster.  This model could be deployed as a social media monitor that can take in a series of twweets and determine if it is a "disaster tweet" or just a run of the mill post.  For example, the difference between "The plane crashed." and "We crashed the party.  
+
+### Results
+Throughout this notebook, we experimented with using both supervised machine learning methods as well as deep learning methods in order to try to produce the most accurate model possible. 
+
+<b><u>With the conclusion of this experiment, we have achieved the following results:</b></u>
+ - <b>Phrases are more significant than single words:</b> When comparing bigrams to common words, the bigrams were much more telling of whether or not a sentence would be in reference to a disaster.<br><br>
+ 
+ - <b>Complexity isn't always better:</b> In this experiment, a simple Logistic Regression model outpeformed highly complex neural networks, and did so in a fraction of the time.<br><br>
+ 
+ - <b> "Disaster" Keywords have the highest feature importance:</b> Words appearing in the top 20 most important include volcano, thunderstorm, fire, fires, killed, sinkhole, etc.
+
+### Recommendations
+Based on this analysis, we can make the following recommendations:
+- For basic NLP, focus on short phrases that include a "Disaster" Keyword
+- In terms of modeling, use a Logistic Regression model.
+- Create a supervised machine learning model that focuses on learning short phrases as opposed to single words
+
+
+## Limitations & Next Steps
+
+With more time, we can improve on this model in the following ways:
+- <b>Scrape Additional Data:</b> With more data, we can increase the accuracy of the neural networks.   
+- <b>Try Additional Types of Models:</b> There are several different other types of models that we can potentially try and see if we can increase the accuracy of our results. 
+- <b>Fine Tuning:</b> We can spend more time tuning our existing models in order to achieve the absolute best results.
+
+
+### For further information
+Please review the narrative of our analysis in [our jupyter notebook](./NLP-Project.ipynb) or review our [presentation](./Mod-4 Presentation.pdf)
+
+For any additional questions, please contact **jeff.spags@gmail.com
+
+
+##### Repository Structure:
+
+Below is the structure of this repoistory and its contents:
+
+```
+
+├── README.md                       <- The top-level README for reviewers of this project.
+├── NLP-Project.ipynb             <- narrative documentation of analysis in jupyter notebook
+├── Mod-4 Presentation.pdf                <- pdf version of project presentation
+└── images
+    └── images                          <- both sourced externally and generated from code
+
+```
