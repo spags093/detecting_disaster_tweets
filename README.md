@@ -61,7 +61,7 @@ most_common_words
 ```
 
 ##### Most Common Words Plot 
-<img src=".Images/common words.png" alt="Bigram Plot">
+<img src="Images/common words.png" alt="Bigram Plot">
 
 As we can see, this didn't really give us a ton of information beyond the word counts.  In order to gain more significant insight, we decided to create a list of the top 25 bigrams.  
 
@@ -74,7 +74,7 @@ explore_scored[:25]
 ```
 
 ##### Bigram Plot
-<img src=".Images/bigram.png" alt="Bigram Plot">
+<img src="Images/bigram.png" alt="Bigram Plot">
 
 This definitely provides ALOT more insight into the relationships between the words in the text.  We can start to see certain patterns emerge that begin to show phrases that seem to be associated with disasters.  
 
