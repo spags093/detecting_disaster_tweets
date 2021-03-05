@@ -5,6 +5,9 @@
 
 The contents of this repository detail an analysis of the module one project. This analysis is detailed in hopes of making the work accessible and replicable.
 
+**Note** 
+3/4/2021 - I'm currently doing some updates on this project that will not currently be reflected in this ReadMe for now.  I will update the ReadMe with the updated results as soon as this is finished.  Check the associated notebook for the work-in-progress.  Thanks!  
+
 <center> <img src="dark-twitter-birdjpg.jpg" alt="Twitter Disaster" width = "700" height = "300"> </center>
 
 ### Business problem:
